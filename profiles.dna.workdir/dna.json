@@ -1,0 +1,11 @@
+{
+    "name": "kizuna-dna",
+    "uuid": "",
+    "properties": null,
+    "zomes": {
+      "profiles": {
+        "wasm_path": "../target/wasm32-unknown-unknown/release/profiles.wasm"
+      }
+    }
+  }
+  
