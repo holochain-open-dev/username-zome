@@ -1,5 +1,5 @@
 use hdk3::prelude::*;
-use derive_more::{Constructor, From, Into};
+use derive_more::{From, Into};
 use crate::{timestamp::Timestamp};
 pub mod handlers;
 
@@ -33,6 +33,9 @@ impl HashWrapper {
         HashWrapper(hash)
     }
 }
+
+#[derive(From, Into, Serialize, Deserialize, SerializedBytes)]
+pub struct AgentKeyWrapper(AgentPubKey);
 
 #[derive(From, Into, Serialize, Deserialize, SerializedBytes)]
 pub struct UsernameWrapper(String);

@@ -1,14 +1,14 @@
 use hdk3::prelude::*;
-use link::Link;
 use hdk3::hash_path::path::Component;
 
-use crate::entries::profile::{
+use super::{
     ProfileEntry,
     ProfileInput,
     ProfileOutput,
     ProfileList,
-    HashWrapper,
-    UsernameWrapper
+    // HashWrapper,
+    UsernameWrapper,
+    AgentKeyWrapper
 };
 
 
@@ -28,8 +28,7 @@ fn username_path(username: &str) -> Path {
     path
 }
 
-#[hdk_extern]
-pub fn create_profile(profile_input: ProfileInput) -> ExternResult<ProfileOutput> {
+pub(crate) fn create_profile(profile_input: ProfileInput) -> ExternResult<ProfileOutput> {
 
     // gets all profiles to check for conflicts
     let path = path_from_str("profiles");
@@ -107,8 +106,7 @@ pub fn create_profile(profile_input: ProfileInput) -> ExternResult<ProfileOutput
     }
 }
 
-#[hdk_extern]
-pub fn test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileList> {
+pub fn _test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileList> {
 
     let mut component_vec: Vec<Component> = Vec::new();
 
@@ -234,8 +232,7 @@ pub fn test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileLis
     // Ok(profile_vec.into())
 }
 
-#[hdk_extern]
-pub fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<ProfileList> {
+pub(crate) fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<ProfileList> {
     let path = path_from_str("profiles");
 
     let links = get_links!(path.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
@@ -262,8 +259,7 @@ pub fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResu
 
 }
 
-#[hdk_extern]
-pub fn get_my_profile(_: ()) -> ExternResult<ProfileOutput> {
+pub(crate) fn get_my_profile(_: ()) -> ExternResult<ProfileOutput> {
     let path = path_from_str(&agent_info!()?.agent_initial_pubkey.to_string());
 
     let links = get_links!(path.hash()?, LinkTag::new("profile"))?;
@@ -292,8 +288,7 @@ pub fn get_my_profile(_: ()) -> ExternResult<ProfileOutput> {
     return_val
 }
 
-#[hdk_extern]
-pub fn get_all_profiles(_: ()) -> ExternResult<ProfileList> {
+pub(crate) fn get_all_profiles(_: ()) -> ExternResult<ProfileList> {
 
     let path = path_from_str("profiles");
     let links = get_links!(path.hash()?)?;
@@ -319,8 +314,7 @@ pub fn get_all_profiles(_: ()) -> ExternResult<ProfileList> {
     Ok(profile_vec.into())
 }
 
-#[hdk_extern]
-pub fn get_address_from_username(username_input: UsernameWrapper) -> ExternResult<HashWrapper> {
+pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResult<AgentKeyWrapper> {
 
     let path = username_path(&username_input.0);
     let links = get_links!(path.hash()?)?;
@@ -334,6 +328,6 @@ pub fn get_address_from_username(username_input: UsernameWrapper) -> ExternResul
         _ => crate::error("Failed to get entry from element")
     };
 
-    let wrapped = HashWrapper(return_val?.into());
+    let wrapped = AgentKeyWrapper(return_val?.into());
     Ok(wrapped)
 }

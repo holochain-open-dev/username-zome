@@ -8,8 +8,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
 // Configure a conductor with two identical DNAs,
 // differentiated by UUID, nicknamed "alice" and "bobbo"
 const config = Config.gen({
-  alice: Config.dna('../profiles.dna.gz', null),
-  bobbo: Config.dna('../profiles.dna.gz', null),
+  alice: Config.dna('../example-dna.dna.gz', null),
+  bobbo: Config.dna('../example-dna.dna.gz', null),
 })
 
 module.exports = (orchestrator) => {
@@ -60,59 +60,22 @@ module.exports = (orchestrator) => {
 
     await sleep(100);
 
-    const address_of_alice = await conductor.call('alice', 'profiles', 'get_address_from_username', "alice" );
+    const address_of_alice = await conductor.call('alice', 'profiles', 'get_agent_pubkey_from_username', "alice" );
     console.log("alice's address");
     console.log(address_of_alice);
 
-    const address_of_bob = await conductor.call('alice', 'profiles', 'get_address_from_username', "bob" );
+    const address_of_bob = await conductor.call('alice', 'profiles', 'get_agent_pubkey_from_username', "bob" );
     console.log("bob's address");
     console.log(address_of_bob);
 
     await sleep(100);
 
-    const test_path = await conductor.call('alice', 'profiles', 'test_path_profile', { username: 'alice' });
-    console.log("root path");
-    console.log(test_path);
+    // const test_path = await conductor.call('alice', 'profiles', 'test_path_profile', { username: 'alice' });
+    // console.log("root path");
+    // console.log(test_path);
 
     await sleep(100);
     
-    // const all = await conductor.call('bobbo', 'profiles', 'get_all_profiles', { username: "bob" });
-    // console.log("nicko get");
-    // console.log(all);
-
-    // const all3 = await conductor.call('bobbo', 'profiles', 'get_all_profiles', { username: "bo"} );
-    // console.log("path ni bo");
-    // console.log(all3);
-
-    // const all4 = await conductor.call('bobbo', 'profiles', 'get_all_profiles', { username: "bo" } );
-    // console.log("path ni bo");
-    // console.log(all4);
-
-    // address is the HEADER address
-    // const set = await conductor.call('bobbo', 'profiles', 'set_username', "Bob" );
-    // console.log("nicko");
-    // console.log(set);
     
-    // s.consistency();
-
-    // const get = await conductor.call('bobbo', 'profiles', 'get_username', set );
-    // console.log("nicko 2");
-    // console.log(get);
-
-    // const set_2 = await conductor.call('bobbo', 'profiles', 'set_username', "Bob" );
-    // console.log("nicko 3");
-    // console.log(set_2);
-    
-    // s.consistency();
-
-    // const all_agents = await conductor.call('bobbo', 'profiles', 'get_all_agents', null);
-    // console.log("nicko 4");
-    // console.log(all_agents);
-
-    // // get back the post at the address (header) where it was just written
-    // // const list = await conductor.call('bobbo', 'profiles', 'get_all_agents',  null)
-    // // address is the HEADER address
-    // // console.log(list);
-    // // t.deepEqual(list[0], "Bob");
   })
 }
