@@ -2,18 +2,18 @@ use hdk3::prelude::*;
 use hdk3::hash_path::path::Component;
 
 use super::{
-    ProfileEntry,
-    ProfileInput,
-    ProfileOutput,
-    ProfileList,
+    UsernameEntry,
+    UsernameOutput,
+    UsernameList,
     // HashWrapper,
     UsernameWrapper,
-    AgentKeyWrapper
+    // AgentKeyWrapper
 };
 
 
 fn path_from_str(string_slice: &str) -> Path {
     let path = Path::from(string_slice);
+    // Tats: expect() panics, should we use it?
     path.ensure().expect("Path could not be ensured");
     path
 }
@@ -28,89 +28,97 @@ fn username_path(username: &str) -> Path {
     path
 }
 
-pub(crate) fn create_profile(profile_input: ProfileInput) -> ExternResult<ProfileOutput> {
+pub(crate) fn create_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
 
-    // gets all profiles to check for conflicts
-    let path = path_from_str("profiles");
+    // gets all usernames to check for conflicts
+    // TODO: make username entry a single_author entry to 
+    // cope with partition.
+    let path = path_from_str("usernames");
 
-    let links = get_links!(path.hash()?, LinkTag::new(profile_input.username.clone().to_string()))?;
+    let links = get_links!(path.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
 
     if links.clone().into_inner().into_iter().len() > 0 {
-        return crate::error("An existing profile with the same username exists")
+        return crate::error("An existing username exists")
     } else {
-        let mut profile_vec: Vec<ProfileOutput> = Vec::new();
+        // why are we constructing a vector here?
+        let mut username_vec: Vec<UsernameOutput> = Vec::default();
         for link in links.into_inner().into_iter() {
             debug!(format!("link nicko: {:?}", link))?;
-            if let Some(profile_element) = get!(link.target)? {
-                let header_details = profile_element.header();
-                debug!(format!("profile_element nicko: {:?}", profile_element))?;
+            if let Some(username_element) = get!(link.target)? {
+                let header_details = username_element.header();
+                debug!(format!("username_element nicko: {:?}", username_element))?;
     
-                if let Some(profile_entry) = profile_element.clone().into_inner().1.to_app_option::<ProfileEntry>()? {
-                    let profile_output = ProfileOutput {
-                        username: profile_entry.username,
+                if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
+                    let username_output = UsernameOutput {
+                        username: username_entry.username,
                         agent_id: header_details.author().to_owned(),
                         created_at: header_details.timestamp(),
-                        entry_header_hash: profile_element.header_address().to_owned()
+                        entry_header_hash: username_element.header_address().to_owned()
                     };
-                    profile_vec.push(profile_output)
+                    username_vec.push(username_output)
                 }
             } else {
                 continue
             }
         };
-    
-        // construct ProfileEntry from input
-        let profile_entry = ProfileEntry {
-            username: profile_input.username.clone(),
-            agent_id: agent_info!()?.agent_initial_pubkey
+        // construct UsernameEntry from input
+        let username_entry = UsernameEntry {
+            username: username_input.0.clone(),
+            agent_id: agent_info!()?.agent_latest_pubkey,
         };
     
-        // commit ProfileEntry to DHT
-        let profile_header_address = create_entry!(&profile_entry)?;
+        // commit UsernameEntry to DHT
+        let username_header_address = create_entry!(&username_entry)?;
         
-        // path from "profiles"
+        // path from "usernames"
         create_link!(
-            hash_entry!(path_from_str("profiles"))?,
-            hash_entry!(&profile_entry)?,
-            LinkTag::new(profile_input.username.clone().to_string())
+            hash_entry!(path_from_str("usernames"))?,
+            hash_entry!(&username_entry)?,
+            LinkTag::new(username_input.0.clone().to_string())
         )?;
     
         // sharded path
+        // TATS: based on the explanation guillem gave us abouth path, "sharding" of path happens
+        // automatically if we build paths like "usernames.a.al.ali.alic.alice", there will be a Path for
+        // each string separated by dot and each of them will be linked to form a tree e.g. "usernames" -> "usernames.a" -> "usernames.a.al" so on 
+        // which means we just have to commit the "youngest" (idk what word is proper) children path 
+        // which in this case is "usernames.a.al.ali.alic.alice"
         create_link!(
-            hash_entry!(username_path(&profile_input.username))?, 
-            hash_entry!(&profile_entry)?
+            hash_entry!(username_path(&username_input.0))?, 
+            hash_entry!(&username_entry)?
         )?;
     
         // path from agent address
+        // TATS: Is it better to just link from agentpubkey directly to username entry?
         create_link!(
-            hash_entry!(path_from_str(&agent_info!()?.agent_initial_pubkey.to_string()))?, 
-            hash_entry!(&profile_entry)?,
-            LinkTag::new("profile")
+            hash_entry!(path_from_str(&agent_info!()?.agent_latest_pubkey.to_string()))?, 
+            hash_entry!(&username_entry)?,
+            LinkTag::new("username")
         )?;
     
-        // get committed profile for return value
-        let profile_element = get!(profile_header_address.clone())?;
-        match profile_element {
+        // get committed username for return value
+        let username_element = get!(username_header_address.clone())?;
+        match username_element {
             Some(element) => {
                 let header_details = element.header();
-                let return_val = ProfileOutput {
-                    username: profile_input.username,
+                let return_val = UsernameOutput {
+                    username: username_input.0,
                     agent_id: header_details.author().to_owned(),
                     created_at: header_details.timestamp(),
-                    entry_header_hash: profile_header_address
+                    entry_header_hash: username_header_address
                 };
                 Ok(return_val)
             },
-            None => crate::error("Failed to create profile")
+            None => crate::error("Failed to create username")
         }
     }
 }
 
-pub fn _test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileList> {
+pub fn _test_path_usernamesa(username_input: UsernameWrapper) -> ExternResult<UsernameList> {
 
-    let mut component_vec: Vec<Component> = Vec::new();
+    let mut component_vec: Vec<Component> = Vec::default();
 
-    for letter in profile_input.username.chars() {
+    for letter in username_input.0.chars() {
         debug!(format!("letter is {:?}", letter.clone()))?;
         let component = Component::from(&letter.to_string());
         component_vec.push(component);
@@ -121,26 +129,26 @@ pub fn _test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileLi
     let path = Path::from(component_vec);
     let links = get_links!(path.hash()?)?;
 
-    let mut profile_vec: Vec<ProfileOutput> = Vec::new();
+    let mut username_vec: Vec<UsernameOutput> = Vec::default();
 
     for link in links.into_inner().into_iter() {
-        if let Some(profile_element) = get!(link.target)? {
-            let header_details = profile_element.header();
-            debug!(format!("Element found. Converting {:?}...", profile_element))?;
+        if let Some(username_element) = get!(link.target)? {
+            let header_details = username_element.header();
+            debug!(format!("Element found. Converting {:?}...", username_element))?;
 
-            if let Some(profile_entry) = profile_element.to_owned().into_inner().1.to_app_option::<ProfileEntry>()? {
+            if let Some(username_entry) = username_element.to_owned().into_inner().1.to_app_option::<UsernameEntry>()? {
                 
                 debug!(format!("Entry found"))?;
 
-                let profile_output = ProfileOutput {
-                    username: profile_entry.username,
+                let username_output = UsernameOutput {
+                    username: username_entry.username,
                     agent_id: header_details.author().to_owned(),
                     created_at: header_details.timestamp(),
-                    entry_header_hash: profile_element.header_address().to_owned()
+                    entry_header_hash: username_element.header_address().to_owned()
                 };
 
                 debug!(format!("Successfully converted. Pushing now..."))?;
-                profile_vec.push(profile_output)
+                username_vec.push(username_output)
             } else {
                 debug!(format!("Cannot convert from entry"))?;
                 continue                
@@ -151,7 +159,7 @@ pub fn _test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileLi
         }
     };
 
-    Ok(profile_vec.into())
+    Ok(username_vec.into())
 
 
     // let path = username_path(&profile_input.username);
@@ -232,34 +240,36 @@ pub fn _test_path_profile(profile_input: ProfileInput) -> ExternResult<ProfileLi
     // Ok(profile_vec.into())
 }
 
-pub(crate) fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<ProfileList> {
-    let path = path_from_str("profiles");
+// Tats: What is this function gonna be use for?
+// Just wondering since there was no similar function in old kizuna.
+pub(crate) fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<UsernameList> {
+    let path = path_from_str("usernames");
 
     let links = get_links!(path.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
 
-    let mut profile_vec: Vec<ProfileOutput> = Vec::new();
+    let mut username_vec: Vec<UsernameOutput> = Vec::default();
     for link in links.into_inner().into_iter() {
-        if let Some(profile_element) = get!(link.target)? {
-            let header_details = profile_element.header();
-            if let Some(profile_entry) = profile_element.clone().into_inner().1.to_app_option::<ProfileEntry>()? {
-                let profile_output = ProfileOutput {
-                    username: profile_entry.username,
+        if let Some(username_element) = get!(link.target)? {
+            let header_details = username_element.header();
+            if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
+                let username_output = UsernameOutput {
+                    username: username_entry.username,
                     agent_id: header_details.author().to_owned(),
                     created_at: header_details.timestamp(),
-                    entry_header_hash: profile_element.header_address().to_owned()
+                    entry_header_hash: username_element.header_address().to_owned()
                 };
-                profile_vec.push(profile_output)
+                username_vec.push(username_output)
             }
         } else {
             continue
         }
     };
     
-    Ok(profile_vec.into())
+    Ok(username_vec.into())
 
 }
 
-pub(crate) fn get_my_profile(_: ()) -> ExternResult<ProfileOutput> {
+pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
     let path = path_from_str(&agent_info!()?.agent_initial_pubkey.to_string());
 
     let links = get_links!(path.hash()?, LinkTag::new("profile"))?;
@@ -267,54 +277,54 @@ pub(crate) fn get_my_profile(_: ()) -> ExternResult<ProfileOutput> {
     let link = links.into_inner()[0].clone();
     
     let return_val = match get!(link.target)? {
-        Some(profile_element) => {
-            let header_details = profile_element.header();
-            match profile_element.clone().into_inner().1.to_app_option::<ProfileEntry>()? {
-                Some(profile_entry) => {
-                    let profile_output = ProfileOutput {
-                        username: profile_entry.username,
+        Some(username_element) => {
+            let header_details = username_element.header();
+            match username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
+                Some(username_entry) => {
+                    let username_output = UsernameOutput {
+                        username: username_entry.username,
                         agent_id: header_details.author().to_owned(),
                         created_at: header_details.timestamp(),
-                        entry_header_hash: profile_element.header_address().to_owned()
+                        entry_header_hash: username_element.header_address().to_owned()
                     };
-                    Ok(profile_output)
+                    Ok(username_output)
                 },
-                _ => crate::error("Failed to get profile")
+                _ => crate::error("Failed to get username")
             }
         },
-        _ => crate::error("Failed to get profile")
+        _ => crate::error("Failed to get username")
     };
 
     return_val
 }
 
-pub(crate) fn get_all_profiles(_: ()) -> ExternResult<ProfileList> {
+pub(crate) fn get_all_usernames(_: ()) -> ExternResult<UsernameList> {
 
-    let path = path_from_str("profiles");
+    let path = path_from_str("usernames");
     let links = get_links!(path.hash()?)?;
 
-    let mut profile_vec: Vec<ProfileOutput> = Vec::new();
+    let mut username_vec: Vec<UsernameOutput> = Vec::default();
     for link in links.into_inner().into_iter() {
-        if let Some(profile_element) = get!(link.target)? {
-            let header_details = profile_element.header();
-            if let Some(profile_entry) = profile_element.clone().into_inner().1.to_app_option::<ProfileEntry>()? {
-                let profile_output = ProfileOutput {
-                    username: profile_entry.username,
+        if let Some(username_element) = get!(link.target)? {
+            let header_details = username_element.header();
+            if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
+                let username_output = UsernameOutput {
+                    username: username_entry.username,
                     agent_id: header_details.author().to_owned(),
                     created_at: header_details.timestamp(),
-                    entry_header_hash: profile_element.header_address().to_owned()
+                    entry_header_hash: username_element.header_address().to_owned()
                 };
-                profile_vec.push(profile_output)
+                username_vec.push(username_output)
             }
         } else {
             continue
         }
     };
     
-    Ok(profile_vec.into())
+    Ok(username_vec.into())
 }
 
-pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResult<AgentKeyWrapper> {
+pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResult<AgentPubKey> {
 
     let path = username_path(&username_input.0);
     let links = get_links!(path.hash()?)?;
@@ -326,8 +336,8 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
             Ok(header_details.author().to_owned())
         },
         _ => crate::error("Failed to get entry from element")
-    };
+    }?;
 
-    let wrapped = AgentKeyWrapper(return_val?.into());
-    Ok(wrapped)
+    // let wrapped = AgentKeyWrapper(return_val?.into());
+    Ok(return_val)
 }
