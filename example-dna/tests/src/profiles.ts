@@ -1,4 +1,5 @@
 import { Config } from '@holochain/tryorama'
+import { Conductor } from '@holochain/tryorama/lib/conductor';
 import { profile } from 'console'
 import * as _ from 'lodash'
 
@@ -10,72 +11,149 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
 const config = Config.gen({
   alice: Config.dna('../example-dna.dna.gz', null),
   bobbo: Config.dna('../example-dna.dna.gz', null),
+  carly: Config.dna('../example-dna.dna.gz', null)
 })
 
+function setUsername(username) {
+  return (conductor, caller) =>
+    conductor.call(caller, 'profiles', 'set_username', username);
+};
+
+function getUsername(agent_pubkey) {
+  return (conductor, caller) => 
+    conductor.call(caller, 'profiles', 'get_username', agent_pubkey)
+}
+function getAllProfiles() {
+  return (conductor, caller) =>
+    conductor.call(caller, 'profiles', 'get_all_usernames', null)
+};
+
+function getAgentPubkeyFromUsername(username) {
+  return (conductor, caller) =>
+    conductor.call(caller, 'profiles', 'get_agent_pubkey_from_username', username)
+};
+
+// function getMyProfile() {
+//   return (conductor, caller) =>
+//     conductor.call(caller, 'profiles', 'get_my_username', null)
+// };
+
+// function getProfileFromUsername(username) {
+//   return (conductor, caller) =>
+//     conductor.call(caller, 'profiles', 'get_profile_from_username', username)
+// };
+
 module.exports = (orchestrator) => {
-  orchestrator.registerScenario('kizuna test', async (s, t) => {
-    // spawn the conductor process
+  orchestrator.registerScenario('create profile', async (s, t) => {
     const { conductor } = await s.players({ conductor: config })
     await conductor.spawn()
 
-    const set_bob = await conductor.call('bobbo', 'profiles', 'create_profile', { username: "bob" });
-    console.log("set bob");
-    console.log(set_bob);
+    const [dna_hash_alice, pubkey_alice] = conductor.cellId('alice');
+    const [dna_hash_bobbo, pubkey_bobbo] = conductor.cellId('bobbo');
 
-    await sleep(100);
+    // alice sets her username
+    const set_username_alice = await setUsername('alice')(conductor, 'alice');
+    await delay(1000);
+    t.deepEqual(set_username_alice.username, 'alice');
+    t.deepEqual(set_username_alice.agent_id, pubkey_alice);
 
-    const set_alice = await conductor.call('alice', 'profiles', 'create_profile', { username: "alice" });
-    console.log("set alice");
-    console.log(set_alice);
+    // bob sets his username
+    const set_username_bobbo = await setUsername('bobbo')(conductor, 'bobbo');
+    await delay(1000);
+    t.deepEqual(set_username_bobbo.username, 'bobbo');
+    t.deepEqual(set_username_bobbo.agent_id, pubkey_bobbo);
 
-    await sleep(100);
-
-    const profile_bob = await conductor.call('bobbo', 'profiles', 'get_my_profile', null);
-    console.log("bob gets profile");
-    console.log(profile_bob);
-
-    await sleep(100);
-
-    const profile_alice = await conductor.call('alice', 'profiles', 'get_my_profile', null);
-    console.log("alice gets profile");
-    console.log(profile_alice);
+    // // error: bob sets a new username for himself
+    // const set_username_bobbo_2 = await setUsername('bobbo')(conductor, 'bobbo');
+    // await delay(1000);
     
-    await sleep(100);
+    // // error: carly sets an already taken username
+    // const set_username_carly = await setUsername('bobbo')(conductor, 'carly');
+    // await delay(1000);
+  });
 
-    const all = await conductor.call('bobbo', 'profiles', 'get_all_profiles', null);
-    console.log("all profiles");
-    console.log(all);
+  orchestrator.registerScenario('get profiles', async (s, t) => {
+    const { conductor } = await s.players({ conductor: config })
+    await conductor.spawn()
 
-    await sleep(100);
+    const [dna_hash_alice, pubkey_alice] = conductor.cellId('alice');
+    const [dna_hash_bobbo, pubkey_bobbo] = conductor.cellId('bobbo');
+    const [dna_hash_carly, pubkey_carly] = conductor.cellId('bobbo');
 
-    const bob_alice = await conductor.call('bobbo', 'profiles', 'get_profile_from_username', "alice" );
-    console.log("bob gets alice");
-    console.log(bob_alice);
+    const set_username_alice = await setUsername('alice')(conductor, 'alice');
+    await delay(1000);
+    const set_username_bobbo = await setUsername('bobbo')(conductor, 'bobbo');
+    await delay(1000);
 
-    await sleep(100);
+    // // alice gets own profile
+    // const profile_alice = await getMyProfile()(conductor, 'alice');
+    // t.deepEqual(profile_alice.username, 'alice');
+    // t.deepEqual(profile_alice.agent_id, pubkey_alice);
+    // await delay(1000);
 
-    const alice_bob = await conductor.call('alice', 'profiles', 'get_profile_from_username', "bob" );
-    console.log("alice gets bob");
-    console.log(alice_bob);
-
-    await sleep(100);
-
-    const address_of_alice = await conductor.call('alice', 'profiles', 'get_agent_pubkey_from_username', "alice" );
-    console.log("alice's address");
-    console.log(address_of_alice);
-
-    const address_of_bob = await conductor.call('alice', 'profiles', 'get_agent_pubkey_from_username', "bob" );
-    console.log("bob's address");
-    console.log(address_of_bob);
-
-    await sleep(100);
-
-    // const test_path = await conductor.call('alice', 'profiles', 'test_path_profile', { username: 'alice' });
-    // console.log("root path");
-    // console.log(test_path);
-
-    await sleep(100);
+    // // bobbo gets own profile
+    // const profile_bobbo = await getMyProfile()(conductor, 'bobbo');
+    // t.deepEqual(profile_bobbo.username, 'bobbo');
+    // t.deepEqual(profile_bobbo.agent_id, pubkey_bobbo);
+    // await delay(1000);
     
+    // // alice gets bobbo's profile using his username
+    // const profile_bobbo_alice = await getProfileFromUsername('bobbo')(conductor, 'alice');
+    // t.deepEqual(profile_bobbo_alice.username, 'bobbo');
+    // t.deepEqual(profile_bobbo_alice.agent_id, pubkey_bobbo);
+    // await delay(1000);
+
+    // // bobbo's gets alice's profile using her username
+    // const profile_alice_bobbo = await getProfileFromUsername('alice')(conductor, 'bobbo');
+    // t.deepEqual(profile_alice_bobbo.username, 'alice');
+    // t.deepEqual(profile_alice_bobbo.agent_id, pubkey_alice);
+    // await delay(1000);
+
+    // alice gets bobbo's profile using his agent pubkey
+    const profile_bobbo_alice_2 = await getUsername(pubkey_bobbo)(conductor, 'alice');
+    t.deepEqual(profile_bobbo_alice_2.username, 'bobbo');
+    t.deepEqual(profile_bobbo_alice_2.agent_id, pubkey_bobbo);
+    await delay(1000);
+
+    // bobbo gets alice's profile using her agent pubkey
+    const profile_alice_bobbo_2 = await getUsername(pubkey_alice)(conductor, 'bobbo');
+    t.deepEqual(profile_alice_bobbo_2.username, 'alice');
+    t.deepEqual(profile_alice_bobbo_2.agent_id, pubkey_alice);
+    await delay(1000);
+
+    // alice gets all profiles
+    const profile_all_alice = await getAllProfiles()(conductor, 'alice');
+    t.deepEqual(profile_all_alice.length, 2);
+    await delay(1000);
+
+    // bobbo gets all profiles
+    const profile_all_bobbo = await getAllProfiles()(conductor, 'bobbo');
+    t.deepEqual(profile_all_bobbo.length, 2);
+
+    // alice gets her address from her username
+    const alice_address = await getAgentPubkeyFromUsername('alice')(conductor, 'alice');
+    t.deepEqual(alice_address, pubkey_alice)
+
+    // bobbo gets his address from his username
+    const bobbo_address = await getAgentPubkeyFromUsername('bobbo')(conductor, 'bobbo');
+    t.deepEqual(bobbo_address, pubkey_bobbo)
+
+    // alice gets bobbo's address from his username
+    const bobbo_address_alice = await getAgentPubkeyFromUsername('bobbo')(conductor, 'alice');
+    t.deepEqual(bobbo_address_alice, pubkey_bobbo)
+
+    // bobbo gets alice's address grom her username
+    const alice_address_bobbo = await getAgentPubkeyFromUsername('alice')(conductor, 'bobbo');
+    t.deepEqual(alice_address_bobbo, pubkey_alice)
+
+    // // error: alice gets non-existent carly's profile
+    // const profile_carly = await getUsername(pubkey_carly)(conductor, 'alice');
+    // t.deepEqual(profile_carly.username, 'carly');
+    // t.deepEqual(profile_carly.agent_id, pubkey_carly);
+    // await delay(1000);
     
+    // // error: alice gets pubkey from non-existent profile
+    // const get_pubkey_carly = await getAgentPubkeyFromUsername('carly')(conductor, 'alice');
+    // t.deepEqual(get_pubkey_carly, pubkey_carly);
   })
 }

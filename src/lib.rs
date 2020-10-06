@@ -30,18 +30,13 @@ pub fn error<T>(reason: &str) -> ExternResult<T> {
 }
 
 #[hdk_extern]
-fn create_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
-    username::handlers::create_username(username_input)
+fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
+    username::handlers::set_username(username_input)
 }
 
 #[hdk_extern]
-fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<UsernameList> {
-    username::handlers::get_profile_from_username(username_input)
-}
-
-#[hdk_extern]
-fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
-    username::handlers::get_my_username(())
+fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOutput> {
+    username::handlers::get_username(agent_pubkey)
 }
 
 #[hdk_extern]
@@ -53,3 +48,14 @@ fn get_all_usernames(_: ()) -> ExternResult<UsernameList> {
 fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResult<AgentPubKey> {
     username::handlers::get_agent_pubkey_from_username(username_input)
 }
+
+// #[hdk_extern]
+// fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
+//     username::handlers::get_profile_from_username(username_input)
+// }
+
+// #[hdk_extern]
+// fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
+//     username::handlers::get_my_username(())
+// }
+
