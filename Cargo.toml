@@ -1,12 +1,12 @@
 [package]
-name = "profiles"
+name = "username"
 version = "0.0.1"
 authors = ["hcij"]
 edition = "2018"
 exclude = ["ui", "example-dna"]
 
 [lib]
-name = "profiles"
+name = "username"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]

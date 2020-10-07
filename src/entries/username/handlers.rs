@@ -14,70 +14,56 @@ fn path_from_str(string_slice: &str) -> Path {
     path
 }
 
-fn username_path(username: &str) -> Path {
-    let _username_len = username.len();
-    let shard: &str = "1:";
-    let string_path = format!("{}{}#{}", shard, 1, username);
-
-    let path = Path::from(string_path);
-    path.ensure().expect("path could not be ensured");
-    path
-}
-
 pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
-    // check if this agent already has a profile
+    // check if this agent already has a username
     let path_agent = path_from_str(&agent_info!()?.agent_initial_pubkey.to_string());
     let links_agent = get_links!(path_agent.hash()?, LinkTag::new("profile"))?;
 
     if links_agent.clone().into_inner().into_iter().len() <= 0 {
-        // create profile for this agent
+        // create username for this agent
 
         // check if the username is already taken
+        // TODO: use the single_author property in entry_def. This current implementation
+        // will be problematic in network partition.
         let path_usernames = path_from_str("usernames");
         let links_usernames = get_links!(path_usernames.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
 
         if links_usernames.clone().into_inner().into_iter().len() <= 0 {
             // username is available
 
-            // construct ProfileEntry from input
+            // construct UsernameEntry from input
             let username_entry = UsernameEntry {
                 username: username_input.0.clone(),
                 agent_id: agent_info!()?.agent_initial_pubkey
             };
         
-            // commit ProfileEntry to DHT
-            let profile_header_address = create_entry!(&username_entry)?;
+            // commit UsernameEntry to DHT
+            let username_header_address = create_entry!(&username_entry)?;
             
-            // path from "profiles"
+            // path from "usernames"
             create_link!(
                 hash_entry!(path_from_str("usernames"))?,
                 hash_entry!(&username_entry)?,
                 LinkTag::new(username_input.0.clone().to_string())
             )?;
         
-            // sharded path
-            create_link!(
-                hash_entry!(username_path(&username_input.0))?, 
-                hash_entry!(&username_entry)?
-            )?;
-        
             // path from agent address
             create_link!(
-                hash_entry!(path_from_str(&agent_info!()?.agent_initial_pubkey.to_string()))?, 
+                hash_entry!(agent_info!()?.agent_latest_pubkey)?, 
                 hash_entry!(&username_entry)?,
-                LinkTag::new("profile")
+                LinkTag::new("username")
             )?;
         
             // get committed profile for return value
-            let profile_element = get!(profile_header_address.clone())?;
-            match profile_element {
+            let username_element = get!(username_header_address.clone())?;
+            match username_element {
                 Some(element) => {
                     let header_details = element.header();
                     let return_val = UsernameOutput {
                         username: username_input.0,
                         agent_id: header_details.author().to_owned(),
                         created_at: header_details.timestamp(),
-                        entry_header_hash: profile_header_address
+                        entry_header_hash: username_header_address
                     };
                     Ok(return_val)
                 },
@@ -88,7 +74,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
             return crate::error("{\"code\": \"202\", \"message\": \"This username is already taken\"}")
         }
     } else {
-        // profile for this agent already exists
+        // username for this agent already exists
         return crate::error("{\"code\": \"302\", \"message\": \"This agent already has a username\"}")
     }
 }
@@ -157,8 +143,8 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
     if links.clone().into_inner().into_iter().len() >= 1 {
         let link = links.into_inner()[0].clone();
         let return_val = match get!(link.target)? {
-            Some(profile_element) => {
-                let header_details = profile_element.header();
+            Some(username_element) => {
+                let header_details = username_element.header();
                 Ok(header_details.author().to_owned())
             },
             _ => crate::error("{\"code\": \"404\", \"message\": \"Failed to convert element to entry\"}")
@@ -169,34 +155,6 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
         return crate::error("{\"code\": \"204\", \"message\": \"No user with that username exists\"}")
     }
 }
-
-// pub(crate) fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
-//     let path = path_from_str("usernames");
-
-//     // let path = path_from_str("profiles");
-//     let links = get_links!(path.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
-
-//     let mut username_vec: Vec<UsernameOutput> = Vec::default();
-//     for link in links.into_inner().into_iter() {
-//         if let Some(username_element) = get!(link.target)? {
-//             let header_details = username_element.header();
-//             if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
-//                 let username_output = UsernameOutput {
-//                     username: username_entry.username,
-//                     agent_id: header_details.author().to_owned(),
-//                     created_at: header_details.timestamp(),
-//                     entry_header_hash: username_element.header_address().to_owned()
-//                 };
-//                 username_vec.push(username_output)
-//             }
-//         } else {
-//             continue
-//         }
-//     };
-    
-//     Ok(username_vec[0].clone())
-
-// }
 
 // pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
  

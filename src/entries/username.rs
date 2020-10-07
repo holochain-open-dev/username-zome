@@ -21,7 +21,4 @@ pub struct UsernameOutput {
 pub struct UsernameList(Vec<UsernameOutput>);
 
 #[derive(From, Into, Serialize, Deserialize, SerializedBytes)]
-pub struct HashWrapper(AnyDhtHash);
-
-#[derive(From, Into, Serialize, Deserialize, SerializedBytes)]
 pub struct UsernameWrapper(String);

@@ -1,10 +1,7 @@
 import { Config } from '@holochain/tryorama'
-import { Conductor } from '@holochain/tryorama/lib/conductor';
-import { profile } from 'console'
 import * as _ from 'lodash'
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms))
-const sleep = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
 
 // Configure a conductor with two identical DNAs,
 // differentiated by UUID, nicknamed "alice" and "bobbo"
@@ -16,35 +13,30 @@ const config = Config.gen({
 
 function setUsername(username) {
   return (conductor, caller) =>
-    conductor.call(caller, 'profiles', 'set_username', username);
+    conductor.call(caller, 'username', 'set_username', username);
 };
 
 function getUsername(agent_pubkey) {
   return (conductor, caller) => 
-    conductor.call(caller, 'profiles', 'get_username', agent_pubkey)
+    conductor.call(caller, 'username', 'get_username', agent_pubkey)
 }
-function getAllProfiles() {
+function getAllUsernames() {
   return (conductor, caller) =>
-    conductor.call(caller, 'profiles', 'get_all_usernames', null)
+    conductor.call(caller, 'username', 'get_all_usernames', null)
 };
 
 function getAgentPubkeyFromUsername(username) {
   return (conductor, caller) =>
-    conductor.call(caller, 'profiles', 'get_agent_pubkey_from_username', username)
+    conductor.call(caller, 'username', 'get_agent_pubkey_from_username', username)
 };
 
-// function getMyProfile() {
+// function getMyUsername() {
 //   return (conductor, caller) =>
 //     conductor.call(caller, 'profiles', 'get_my_username', null)
 // };
 
-// function getProfileFromUsername(username) {
-//   return (conductor, caller) =>
-//     conductor.call(caller, 'profiles', 'get_profile_from_username', username)
-// };
-
 module.exports = (orchestrator) => {
-  orchestrator.registerScenario('create profile', async (s, t) => {
+  orchestrator.registerScenario('create username', async (s, t) => {
     const { conductor } = await s.players({ conductor: config })
     await conductor.spawn()
 
@@ -72,13 +64,13 @@ module.exports = (orchestrator) => {
     // await delay(1000);
   });
 
-  orchestrator.registerScenario('get profiles', async (s, t) => {
+  orchestrator.registerScenario('get usernames', async (s, t) => {
     const { conductor } = await s.players({ conductor: config })
     await conductor.spawn()
 
     const [dna_hash_alice, pubkey_alice] = conductor.cellId('alice');
     const [dna_hash_bobbo, pubkey_bobbo] = conductor.cellId('bobbo');
-    const [dna_hash_carly, pubkey_carly] = conductor.cellId('bobbo');
+    const [dna_hash_carly, pubkey_carly] = conductor.cellId('carly');
 
     const set_username_alice = await setUsername('alice')(conductor, 'alice');
     await delay(1000);
@@ -86,27 +78,15 @@ module.exports = (orchestrator) => {
     await delay(1000);
 
     // // alice gets own profile
-    // const profile_alice = await getMyProfile()(conductor, 'alice');
+    // const profile_alice = await getMyUsername()(conductor, 'alice');
     // t.deepEqual(profile_alice.username, 'alice');
     // t.deepEqual(profile_alice.agent_id, pubkey_alice);
     // await delay(1000);
 
     // // bobbo gets own profile
-    // const profile_bobbo = await getMyProfile()(conductor, 'bobbo');
+    // const profile_bobbo = await getMyUsername()(conductor, 'bobbo');
     // t.deepEqual(profile_bobbo.username, 'bobbo');
     // t.deepEqual(profile_bobbo.agent_id, pubkey_bobbo);
-    // await delay(1000);
-    
-    // // alice gets bobbo's profile using his username
-    // const profile_bobbo_alice = await getProfileFromUsername('bobbo')(conductor, 'alice');
-    // t.deepEqual(profile_bobbo_alice.username, 'bobbo');
-    // t.deepEqual(profile_bobbo_alice.agent_id, pubkey_bobbo);
-    // await delay(1000);
-
-    // // bobbo's gets alice's profile using her username
-    // const profile_alice_bobbo = await getProfileFromUsername('alice')(conductor, 'bobbo');
-    // t.deepEqual(profile_alice_bobbo.username, 'alice');
-    // t.deepEqual(profile_alice_bobbo.agent_id, pubkey_alice);
     // await delay(1000);
 
     // alice gets bobbo's profile using his agent pubkey
@@ -115,19 +95,19 @@ module.exports = (orchestrator) => {
     t.deepEqual(profile_bobbo_alice_2.agent_id, pubkey_bobbo);
     await delay(1000);
 
-    // bobbo gets alice's profile using her agent pubkey
+    // bobbo gets alice's username using her agent pubkey
     const profile_alice_bobbo_2 = await getUsername(pubkey_alice)(conductor, 'bobbo');
     t.deepEqual(profile_alice_bobbo_2.username, 'alice');
     t.deepEqual(profile_alice_bobbo_2.agent_id, pubkey_alice);
     await delay(1000);
 
-    // alice gets all profiles
-    const profile_all_alice = await getAllProfiles()(conductor, 'alice');
+    // alice gets all usernames
+    const profile_all_alice = await getAllUsernames()(conductor, 'alice');
     t.deepEqual(profile_all_alice.length, 2);
     await delay(1000);
 
-    // bobbo gets all profiles
-    const profile_all_bobbo = await getAllProfiles()(conductor, 'bobbo');
+    // bobbo gets all usernames
+    const profile_all_bobbo = await getAllUsernames()(conductor, 'bobbo');
     t.deepEqual(profile_all_bobbo.length, 2);
 
     // alice gets her address from her username

@@ -1,5 +1,5 @@
 use hdk3::prelude::*;
-use hdk3::prelude::Path;
+
 mod entries;
 use entries::username;
 
@@ -9,15 +9,6 @@ use username::{
     UsernameList,
     UsernameWrapper,
 };
-
-// pub use entries::{
-//     profile::{
-//         ProfileEntry,
-//         ProfileInput,
-//         ProfileOutput,
-//     },
-//     profile::*
-// };
 
 // ENTRY DEF DECLARATION
 entry_defs![
@@ -48,11 +39,6 @@ fn get_all_usernames(_: ()) -> ExternResult<UsernameList> {
 fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResult<AgentPubKey> {
     username::handlers::get_agent_pubkey_from_username(username_input)
 }
-
-// #[hdk_extern]
-// fn get_profile_from_username (username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
-//     username::handlers::get_profile_from_username(username_input)
-// }
 
 // #[hdk_extern]
 // fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {

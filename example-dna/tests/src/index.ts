@@ -2,7 +2,7 @@ import { Orchestrator } from '@holochain/tryorama'
 
 const orchestrator = new Orchestrator()
 
-require('./profiles')(orchestrator)
+require('./username')(orchestrator)
 
 orchestrator.run()
 
