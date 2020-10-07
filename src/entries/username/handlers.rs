@@ -49,7 +49,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
         
             // path from agent address
             create_link!(
-                hash_entry!(agent_info!()?.agent_latest_pubkey)?, 
+                hash_entry!(path_from_str(&agent_info!()?.agent_latest_pubkey.to_string()))?, 
                 hash_entry!(&username_entry)?,
                 LinkTag::new("username")
             )?;
@@ -67,15 +67,15 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
                     };
                     Ok(return_val)
                 },
-                None => crate::error("{\"code\": \"404\", \"message\": \"Failed to convert element to entry\"}")
+                None => crate::error("Failed to convert element to entry")
             }
         } else {
             // username is not available
-            return crate::error("{\"code\": \"202\", \"message\": \"This username is already taken\"}")
+            return crate::error("This username is already taken")
         }
     } else {
         // username for this agent already exists
-        return crate::error("{\"code\": \"302\", \"message\": \"This agent already has a username\"}")
+        return crate::error("This agent already has a username")
     }
 }
 
@@ -98,13 +98,13 @@ pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOu
                     };
                     Ok(username_output)
                 } else {
-                    return crate::error("{\"code\": \"404\", \"message\": \"Failed to convert element to entry\"}")
+                    return crate::error("Failed to convert element to entry")
                 }
             },
-            _ => return crate::error("{\"code\": \"204\", \"message\": \"No username for this agent exists\"}")
+            _ => return crate::error("No username for this agent exists")
         }
     } else {
-        return crate::error("{\"code\": \"204\", \"message\": \"No username for this agent exists\"}")
+        return crate::error("No username for this agent exists")
     }
 
 }
@@ -147,12 +147,12 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
                 let header_details = username_element.header();
                 Ok(header_details.author().to_owned())
             },
-            _ => crate::error("{\"code\": \"404\", \"message\": \"Failed to convert element to entry\"}")
+            _ => crate::error("Failed to convert element to entry")
         }?;
         
         Ok(return_val)
     } else {
-        return crate::error("{\"code\": \"204\", \"message\": \"No user with that username exists\"}")
+        return crate::error("No user with that username exists")
     }
 }
 
@@ -175,10 +175,10 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
 //                     };
 //                     Ok(username_output)
 //                 },
-//                 _ => crate::error("{\"code\": \"404\", \"message\": \"Failed to convert element to entry\"}")
+//                 _ => crate::error("Failed to convert element to entry")
 //             }
 //         },
-//         _ => crate::error("{\"code\": \"204\", \"message\": \"No username for this agent exists\"}")
+//         _ => crate::error("No username for this agent exists")
 //     };
 
 //     return_val

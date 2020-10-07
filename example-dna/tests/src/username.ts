@@ -3,8 +3,6 @@ import * as _ from 'lodash'
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms))
 
-// Configure a conductor with two identical DNAs,
-// differentiated by UUID, nicknamed "alice" and "bobbo"
 const config = Config.gen({
   alice: Config.dna('../example-dna.dna.gz', null),
   bobbo: Config.dna('../example-dna.dna.gz', null),
