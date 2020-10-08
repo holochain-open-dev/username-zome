@@ -16,8 +16,7 @@ fn path_from_str(string_slice: &str) -> Path {
 
 pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
     // check if this agent already has a username
-    let path_agent = path_from_str(&agent_info!()?.agent_initial_pubkey.to_string());
-    let links_agent = get_links!(path_agent.hash()?, LinkTag::new("profile"))?;
+    let links_agent = get_links!(agent_info!()?.agent_latest_pubkey.into(), LinkTag::new("username"))?;
 
     if links_agent.clone().into_inner().into_iter().len() <= 0 {
         // create username for this agent
@@ -40,21 +39,21 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
             // commit UsernameEntry to DHT
             let username_header_address = create_entry!(&username_entry)?;
             
-            // path from "usernames"
+            // link from path "usernames"
             create_link!(
                 hash_entry!(path_from_str("usernames"))?,
                 hash_entry!(&username_entry)?,
                 LinkTag::new(username_input.0.clone().to_string())
             )?;
         
-            // path from agent address
+            // link from agent address
             create_link!(
                 agent_info!()?.agent_latest_pubkey.into(),
                 hash_entry!(&username_entry)?,
                 LinkTag::new("username")
             )?;
         
-            // get committed profile for return value
+            // get committed username for return value
             let username_element = get!(username_header_address.clone())?;
             debug!("get succeeded")?;
             match username_element {
@@ -162,8 +161,7 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
 
 // pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
  
-//     let path = path_from_str(&agent_info!()?.agent_initial_pubkey.to_string());
-//     let links = get_links!(path.hash()?, LinkTag::new("profile"))?;
+//     let links = get_links!(agent_info!()?.agent_initial_pubkey.into(), LinkTag::new("username"))?;
 
 //     let link = links.into_inner()[0].clone();
 //     let return_val = match get!(link.target)? {
