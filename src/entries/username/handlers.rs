@@ -49,22 +49,27 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
         
             // path from agent address
             create_link!(
-                hash_entry!(path_from_str(&agent_info!()?.agent_latest_pubkey.to_string()))?, 
+                agent_info!()?.agent_latest_pubkey.into(),
                 hash_entry!(&username_entry)?,
                 LinkTag::new("username")
             )?;
         
             // get committed profile for return value
             let username_element = get!(username_header_address.clone())?;
+            debug!("get succeeded")?;
             match username_element {
                 Some(element) => {
+                    debug!("Some element found")?;
                     let header_details = element.header();
+                    debug!("header is present")?;
                     let return_val = UsernameOutput {
                         username: username_input.0,
                         agent_id: header_details.author().to_owned(),
                         created_at: header_details.timestamp(),
                         entry_header_hash: username_header_address
                     };
+                    debug!("return value is constructed")?;
+                    debug!(format!("return value is {:?}", return_val.clone()))?;
                     Ok(return_val)
                 },
                 None => crate::error("Failed to convert element to entry")
@@ -81,8 +86,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
 
 pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOutput> {
 
-    let path = path_from_str(&agent_pubkey.to_string());
-    let links = get_links!(path.hash()?)?;
+    let links = get_links!(agent_pubkey.into())?;
 
     if links.clone().into_inner().into_iter().len() >= 1 {
         let link = links.into_inner()[0].clone();
