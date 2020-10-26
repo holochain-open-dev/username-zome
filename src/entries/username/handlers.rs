@@ -33,7 +33,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
             // construct UsernameEntry from input
             let username_entry = UsernameEntry {
                 username: username_input.0.clone(),
-                agent_id: agent_info!()?.agent_initial_pubkey
+                agent_id: agent_info!()?.agent_latest_pubkey
             };
         
             // commit UsernameEntry to DHT
@@ -159,29 +159,42 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
     }
 }
 
-// pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
- 
-//     let links = get_links!(agent_info!()?.agent_initial_pubkey.into(), LinkTag::new("username"))?;
+pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
 
-//     let link = links.into_inner()[0].clone();
-//     let return_val = match get!(link.target)? {
-//         Some(username_element) => {
-//             let header_details = username_element.header();
-//             match username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
-//                 Some(username_entry) => {
-//                     let username_output = UsernameOutput {
-//                         username: username_entry.username,
-//                         agent_id: header_details.author().to_owned(),
-//                         created_at: header_details.timestamp(),
-//                         entry_header_hash: username_element.header_address().to_owned()
-//                     };
-//                     Ok(username_output)
-//                 },
-//                 _ => crate::error("Failed to convert element to entry")
-//             }
-//         },
-//         _ => crate::error("No username for this agent exists")
-//     };
+    let query_result = query!(
+        QueryFilter::new()
+        .entry_type(
+            EntryType::App(
+                AppEntryType::new(
+                    EntryDefIndex::from(0),
+                    zome_info!()?.zome_id,
+                    EntryVisibility::Public
+                )
+            )
+        )
+        .include_entries(true)
+    )?;
 
-//     return_val
-// }
+    let map_result: Vec<UsernameOutput>= query_result.0
+        .into_iter()
+        .filter_map(|el| {
+            let header_details = el.header();
+            let entry = el.clone().into_inner().1.to_app_option::<UsernameEntry>();
+            match entry {
+                Ok(Some(username_entry)) => {
+                    let username_output = UsernameOutput {
+                        username: username_entry.username,
+                        agent_id: header_details.author().to_owned(),
+                        created_at: header_details.timestamp(),
+                        entry_header_hash: el.header_address().to_owned()
+                    };
+                    Some(username_output)
+                }, 
+                _ => None
+            }
+        })
+        .collect();
+        
+    if map_result.len() == 1 { return Ok(map_result[0].clone()) } 
+    else { return crate::error("No username exists for this agent") }
+}

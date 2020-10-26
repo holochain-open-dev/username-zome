@@ -12,8 +12,8 @@ use username::{
 
 // ENTRY DEF DECLARATION
 entry_defs![
-    Path::entry_def(),
-    UsernameEntry::entry_def()
+    UsernameEntry::entry_def(),
+    Path::entry_def()
 ];
 
 pub fn error<T>(reason: &str) -> ExternResult<T> {
@@ -40,8 +40,8 @@ fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResu
     username::handlers::get_agent_pubkey_from_username(username_input)
 }
 
-// #[hdk_extern]
-// fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
-//     username::handlers::get_my_username(())
-// }
+#[hdk_extern]
+fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
+    username::handlers::get_my_username(())
+}
 

@@ -28,10 +28,10 @@ function getAgentPubkeyFromUsername(username) {
     conductor.call(caller, 'username', 'get_agent_pubkey_from_username', username)
 };
 
-// function getMyUsername() {
-//   return (conductor, caller) =>
-//     conductor.call(caller, 'profiles', 'get_my_username', null)
-// };
+function getMyUsername() {
+  return (conductor, caller) =>
+    conductor.call(caller, 'username', 'get_my_username', null)
+};
 
 module.exports = (orchestrator) => {
   orchestrator.registerScenario('create username', async (s, t) => {
@@ -70,22 +70,28 @@ module.exports = (orchestrator) => {
     const [dna_hash_bobbo, pubkey_bobbo] = conductor.cellId('bobbo');
     const [dna_hash_carly, pubkey_carly] = conductor.cellId('carly');
 
+    // // error: alice gets own nonexistent profile
+    // const profile_alice_none = await getMyUsername()(conductor, 'alice');
+    // t.deepEqual(profile_alice_none.username, 'alice');
+    // t.deepEqual(profile_alice_none.agent_id, pubkey_alice);
+    // await delay(1000);
+
     const set_username_alice = await setUsername('alice')(conductor, 'alice');
     await delay(1000);
     const set_username_bobbo = await setUsername('bobbo')(conductor, 'bobbo');
     await delay(1000);
 
-    // // alice gets own profile
-    // const profile_alice = await getMyUsername()(conductor, 'alice');
-    // t.deepEqual(profile_alice.username, 'alice');
-    // t.deepEqual(profile_alice.agent_id, pubkey_alice);
-    // await delay(1000);
+    // alice gets own profile
+    const profile_alice = await getMyUsername()(conductor, 'alice');
+    t.deepEqual(profile_alice.username, 'alice');
+    t.deepEqual(profile_alice.agent_id, pubkey_alice);
+    await delay(1000);
 
-    // // bobbo gets own profile
-    // const profile_bobbo = await getMyUsername()(conductor, 'bobbo');
-    // t.deepEqual(profile_bobbo.username, 'bobbo');
-    // t.deepEqual(profile_bobbo.agent_id, pubkey_bobbo);
-    // await delay(1000);
+    // bobbo gets own profile
+    const profile_bobbo = await getMyUsername()(conductor, 'bobbo');
+    t.deepEqual(profile_bobbo.username, 'bobbo');
+    t.deepEqual(profile_bobbo.agent_id, pubkey_bobbo);
+    await delay(1000);
 
     // alice gets bobbo's profile using his agent pubkey
     const profile_bobbo_alice_2 = await getUsername(pubkey_bobbo)(conductor, 'alice');
