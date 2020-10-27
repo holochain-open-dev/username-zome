@@ -6,7 +6,6 @@ pub mod handlers;
 #[hdk_entry(id = "username", visibility = "public" )]
 pub struct UsernameEntry {
     username: String,
-    agent_id: AgentPubKey,
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Clone, From, Into, Debug)]

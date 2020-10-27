@@ -24,59 +24,63 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
         // check if the username is already taken
         // TODO: use the single_author property in entry_def. This current implementation
         // will be problematic in network partition.
-        let path_usernames = path_from_str("usernames");
-        let links_usernames = get_links!(path_usernames.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
+        // let path_usernames = path_from_str("usernames");
+        // let links_usernames = get_links!(path_usernames.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
 
-        if links_usernames.clone().into_inner().into_iter().len() <= 0 {
-            // username is available
+        // get the entry directly from the hash instead of getting it from links
+        let username_entry = UsernameEntry {
+            username: username_input.0.clone()
+        };
+        let username_hash = hash_entry!(&username_entry)?;
+        let maybe_username = get!(username_hash)?;
 
-            // construct UsernameEntry from input
-            let username_entry = UsernameEntry {
-                username: username_input.0.clone(),
-                agent_id: agent_info!()?.agent_latest_pubkey
-            };
-        
-            // commit UsernameEntry to DHT
-            let username_header_address = create_entry!(&username_entry)?;
+        match maybe_username {
+            Some(_el) => {
+                // username is not available
+                return crate::error("This username is already taken")
+            },
+            None => {
+                // username is available
             
-            // link from path "usernames"
-            create_link!(
-                hash_entry!(path_from_str("usernames"))?,
-                hash_entry!(&username_entry)?,
-                LinkTag::new(username_input.0.clone().to_string())
-            )?;
-        
-            // link from agent address
-            create_link!(
-                agent_info!()?.agent_latest_pubkey.into(),
-                hash_entry!(&username_entry)?,
-                LinkTag::new("username")
-            )?;
-        
-            // get committed username for return value
-            let username_element = get!(username_header_address.clone())?;
-            debug!("get succeeded")?;
-            match username_element {
-                Some(element) => {
-                    debug!("Some element found")?;
-                    let header_details = element.header();
-                    debug!("header is present")?;
-                    let return_val = UsernameOutput {
-                        username: username_input.0,
-                        agent_id: header_details.author().to_owned(),
-                        created_at: header_details.timestamp(),
-                        entry_header_hash: username_header_address
-                    };
-                    debug!("return value is constructed")?;
-                    debug!(format!("return value is {:?}", return_val.clone()))?;
-                    Ok(return_val)
-                },
-                None => crate::error("Failed to convert element to entry")
+                // commit UsernameEntry to DHT
+                let username_header_address = create_entry!(&username_entry)?;
+                
+                // link from path "usernames"
+                create_link!(
+                    hash_entry!(path_from_str("usernames"))?,
+                    hash_entry!(&username_entry)?,
+                    LinkTag::new(username_input.0.clone().to_string())
+                )?;
+            
+                // link from agent address
+                create_link!(
+                    agent_info!()?.agent_latest_pubkey.into(),
+                    hash_entry!(&username_entry)?,
+                    LinkTag::new("username")
+                )?;
+            
+                // get committed username for return value
+                let username_element = get!(username_header_address.clone())?;
+                debug!("get succeeded")?;
+                match username_element {
+                    Some(element) => {
+                        debug!("Some element found")?;
+                        let header_details = element.header();
+                        debug!("header is present")?;
+                        let return_val = UsernameOutput {
+                            username: username_input.0,
+                            agent_id: header_details.author().to_owned(),
+                            created_at: header_details.timestamp(),
+                            entry_header_hash: username_header_address
+                        };
+                        debug!("return value is constructed")?;
+                        debug!(format!("return value is {:?}", return_val.clone()))?;
+                        Ok(return_val)
+                    },
+                    None => crate::error("Failed to convert element to entry")
+                }
             }
-        } else {
-            // username is not available
-            return crate::error("This username is already taken")
-        }
+        } 
     } else {
         // username for this agent already exists
         return crate::error("This agent already has a username")
@@ -140,23 +144,20 @@ pub(crate) fn get_all_usernames(_: ()) -> ExternResult<UsernameList> {
 
 pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResult<AgentPubKey> {
 
-    let path = path_from_str("usernames");
-    let links = get_links!(path.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
+    // let path = path_from_str("usernames");
+    // let links = get_links!(path.hash()?, LinkTag::new(username_input.0.clone().to_string()))?;
 
-    if links.clone().into_inner().into_iter().len() >= 1 {
-        let link = links.into_inner()[0].clone();
-        let return_val = match get!(link.target)? {
-            Some(username_element) => {
-                let header_details = username_element.header();
-                Ok(header_details.author().to_owned())
-            },
-            _ => crate::error("Failed to convert element to entry")
-        }?;
-        
-        Ok(return_val)
-    } else {
-        return crate::error("No user with that username exists")
-    }
+    // get entry by its entry hash instead of links
+    let username_entry = UsernameEntry { username: username_input.0 };
+    let username_hash = hash_entry!(&username_entry)?;
+
+    match get!(username_hash)? {
+        Some(el) => {
+            let header_details = el.header();
+            Ok(header_details.author().to_owned())
+        },
+        None => crate::error("The username does not exist")
+    } 
 }
 
 pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {

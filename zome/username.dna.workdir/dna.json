@@ -1,0 +1,10 @@
+{
+  "name": "username",
+  "uuid": "",
+  "properties": null,
+  "zomes": {
+    "username": {
+      "wasm_path": "../../../holochain/target/wasm32-unknown-unknown/release/username.wasm"
+    }
+  }
+}
