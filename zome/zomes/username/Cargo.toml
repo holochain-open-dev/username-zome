@@ -13,4 +13,3 @@ crate-type = ["cdylib", "rlib"]
 derive_more = "0"
 serde = "1"
 hdk3 = { git = "https://github.com/holochain/holochain.git", rev="3675b5" }
-this_error="1.0.20"
