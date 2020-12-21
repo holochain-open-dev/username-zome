@@ -94,7 +94,7 @@ orchestrator.registerScenario('create username', async (s, t) => {
   // await delay(1000);
 
   const set_username_alice = await setUsername('alice')(alice_conductor,);
-  const set_username_bobbo = await setUsername('bobbo')(bobby_conductor,;
+  const set_username_bobbo = await setUsername('bobbo')(bobby_conductor);
   await delay(1000);
 
   // alice gets own profile

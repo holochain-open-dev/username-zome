@@ -16,7 +16,7 @@ fn path_from_str(string_slice: &str) -> Path {
 
 pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
     // check if this agent already has a username
-    let links_agent = get_links(agent_info()?.agent_latest_pubkey.into(), LinkTag::new("username"))?;
+    let links_agent = get_links(agent_info()?.agent_latest_pubkey.into(), Some(LinkTag::new("username")))?;
 
     if links_agent.clone().into_inner().into_iter().len() <= 0 {
         // create username for this agent
@@ -48,7 +48,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
                 
                 // link from path "usernames"
                 create_link(
-                    hash_entry(path_from_str("usernames"))?,
+                    hash_entry(&path_from_str("usernames"))?,
                     hash_entry(&username_entry)?,
                     LinkTag::new(username_input.0.clone().to_string())
                 )?;
@@ -85,7 +85,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
 
 pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOutput> {
 
-    let links = get_links(agent_pubkey.into())?;
+    let links = get_links(agent_pubkey.into(), None)?;
 
     if links.clone().into_inner().into_iter().len() >= 1 {
         let link = links.into_inner()[0].clone();
@@ -116,11 +116,12 @@ pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOu
 pub(crate) fn get_all_usernames(_: ()) -> ExternResult<UsernameList> {
 
     let path = path_from_str("usernames");
-    let links = get_links(path.hash()?)?;
+    let links = get_links(path.hash()?, None)?;
 
     let mut username_vec: Vec<UsernameOutput> = Vec::default();
     for link in links.into_inner().into_iter() {
-        if let Some(username_element) = get(link.target)? {
+        let option = GetOptions::latest();
+        if let Some(username_element) = get(link.target, option)? {
             let header_details = username_element.header();
             if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
                 let username_output = UsernameOutput {
