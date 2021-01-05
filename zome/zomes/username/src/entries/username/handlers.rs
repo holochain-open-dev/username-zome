@@ -16,7 +16,7 @@ fn path_from_str(string_slice: &str) -> Path {
 
 pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput> {
     // check if this agent already has a username
-    let links_agent = get_links!(agent_info!()?.agent_latest_pubkey.into(), LinkTag::new("username"))?;
+    let links_agent = get_links(agent_info()?.agent_latest_pubkey.into(), Some(LinkTag::new("username")))?;
 
     if links_agent.clone().into_inner().into_iter().len() <= 0 {
         // create username for this agent
@@ -31,8 +31,9 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
         let username_entry = UsernameEntry {
             username: username_input.0.clone()
         };
-        let username_hash = hash_entry!(&username_entry)?;
-        let maybe_username = get!(username_hash)?;
+        let username_hash = hash_entry(&username_entry)?;
+        let option = GetOptions::latest();
+        let maybe_username = get(username_hash, option.clone())?;
 
         match maybe_username {
             Some(_el) => {
@@ -43,38 +44,33 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
                 // username is available
             
                 // commit UsernameEntry to DHT
-                let username_header_address = create_entry!(&username_entry)?;
+                let username_header_address = create_entry(&username_entry)?;
                 
                 // link from path "usernames"
-                create_link!(
-                    hash_entry!(path_from_str("usernames"))?,
-                    hash_entry!(&username_entry)?,
+                create_link(
+                    hash_entry(&path_from_str("usernames"))?,
+                    hash_entry(&username_entry)?,
                     LinkTag::new(username_input.0.clone().to_string())
                 )?;
             
                 // link from agent address
-                create_link!(
-                    agent_info!()?.agent_latest_pubkey.into(),
-                    hash_entry!(&username_entry)?,
+                create_link(
+                    agent_info()?.agent_latest_pubkey.into(),
+                    hash_entry(&username_entry)?,
                     LinkTag::new("username")
                 )?;
             
                 // get committed username for return value
-                let username_element = get!(username_header_address.clone())?;
-                debug!("get succeeded")?;
+                let username_element = get(username_header_address.clone(), option.clone())?;
                 match username_element {
                     Some(element) => {
-                        debug!("Some element found")?;
                         let header_details = element.header();
-                        debug!("header is present")?;
                         let return_val = UsernameOutput {
                             username: username_input.0,
                             agent_id: header_details.author().to_owned(),
                             created_at: header_details.timestamp(),
                             entry_header_hash: username_header_address
                         };
-                        debug!("return value is constructed")?;
-                        debug!(format!("return value is {:?}", return_val.clone()))?;
                         Ok(return_val)
                     },
                     None => crate::error("Failed to convert element to entry")
@@ -89,11 +85,12 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
 
 pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOutput> {
 
-    let links = get_links!(agent_pubkey.into())?;
+    let links = get_links(agent_pubkey.into(), Some(LinkTag::new("username")))?;
 
     if links.clone().into_inner().into_iter().len() >= 1 {
         let link = links.into_inner()[0].clone();
-        match get!(link.target)? {
+        let option = GetOptions::latest();
+        match get(link.target, option)? {
             Some(username_element) => {
                 let header_details = username_element.header();
                 if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
@@ -119,11 +116,12 @@ pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOu
 pub(crate) fn get_all_usernames(_: ()) -> ExternResult<UsernameList> {
 
     let path = path_from_str("usernames");
-    let links = get_links!(path.hash()?)?;
+    let links = get_links(path.hash()?, None)?;
 
     let mut username_vec: Vec<UsernameOutput> = Vec::default();
     for link in links.into_inner().into_iter() {
-        if let Some(username_element) = get!(link.target)? {
+        let option = GetOptions::latest();
+        if let Some(username_element) = get(link.target, option)? {
             let header_details = username_element.header();
             if let Some(username_entry) = username_element.clone().into_inner().1.to_app_option::<UsernameEntry>()? {
                 let username_output = UsernameOutput {
@@ -149,9 +147,9 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
 
     // get entry by its entry hash instead of links
     let username_entry = UsernameEntry { username: username_input.0 };
-    let username_hash = hash_entry!(&username_entry)?;
-
-    match get!(username_hash)? {
+    let username_hash = hash_entry(&username_entry)?;
+    let option = GetOptions::latest();
+    match get(username_hash, option)? {
         Some(el) => {
             let header_details = el.header();
             Ok(header_details.author().to_owned())
@@ -162,13 +160,13 @@ pub(crate) fn get_agent_pubkey_from_username(username_input: UsernameWrapper) ->
 
 pub(crate) fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
 
-    let query_result = query!(
+    let query_result = query(
         QueryFilter::new()
         .entry_type(
             EntryType::App(
                 AppEntryType::new(
                     EntryDefIndex::from(0),
-                    zome_info!()?.zome_id,
+                    zome_info()?.zome_id,
                     EntryVisibility::Public
                 )
             )
