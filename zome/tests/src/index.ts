@@ -94,17 +94,12 @@ function getMyUsername() {
 
   const set_username_alice = await setUsername('alice')(alice_conductor,);
   const set_username_bobbo = await setUsername('bobbo')(bobby_conductor);
-  console.log("what the hell is happening1")
-  console.log(set_username_bobbo)
   
   await delay(10000);
   
   // alice gets own profile
   const profile_alice = await getMyUsername()(alice_conductor,);
-  console.log("what the hell is happening2")
-  console.log(profile_alice)
   t.deepEqual(profile_alice.username, 'alice');
-  await delay(1000);
 
   // bobbo gets own profile
   const profile_bobbo = await getMyUsername()(bobby_conductor,);
