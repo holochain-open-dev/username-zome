@@ -1,20 +1,22 @@
 import { Config, Orchestrator, InstallAgentsHapps } from '@holochain/tryorama';
+import { ScenarioApi } from '@holochain/tryorama/lib/api';
 import path from 'path'
 
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const config = Config.gen();
+let usernameDNA = path.join('../username.dna.gz');
 
-const installable: InstallAgentsHapps = [
-  // agent 0...
-  [
-    // happ 0...
-    [
-      // dna 0...
-      path.join('../username.dna.gz')
-    ]
-  ]
+const install2Agents: InstallAgentsHapps = [
+  [[usernameDNA]],
+  [[usernameDNA]]
+] 
+
+const install3Agents: InstallAgentsHapps = [
+  [[usernameDNA]],
+  [[usernameDNA]],
+  [[usernameDNA]]
 ] 
 
 const orchestrator = new Orchestrator()
@@ -30,7 +32,7 @@ function getUsername(agent_pubkey) {
 }
 function getAllUsernames() {
   return (conductor) =>
-    conductor.call('username', 'get_all_usernames', {})
+    conductor.call('username', 'get_all_usernames', null)
 };
 
 function getAgentPubkeyFromUsername(username) {
@@ -40,52 +42,49 @@ function getAgentPubkeyFromUsername(username) {
 
 function getMyUsername() {
   return (conductor) =>
-    conductor.call('username', 'get_my_username', {})
+    conductor.call('username', 'get_my_username', null)
 };
 
 
-orchestrator.registerScenario('create username', async (s, t) => {
-  const [alice, bobby] = await s.players([config, config]);
-  const [alice_lobby_happ] = await alice.installAgentsHapps(installable);
-  const [bobby_lobby_happ] = await bobby.installAgentsHapps(installable);
-  const alice_conductor = alice_lobby_happ[0].cells[0];
-  const bobby_conductor = bobby_lobby_happ[0].cells[0];
+// orchestrator.registerScenario('create username', async (s: ScenarioApi, t) => {
+//   const [conductor] = await s.players([config]);
+//   const [[alice_lobby_happ], [bobby_lobby_happ]] = await conductor.installAgentsHapps(install2Agents);
+//   const [alice_cell] = alice_lobby_happ.cells;
+//   const [bobby_cell] = bobby_lobby_happ.cells;
 
-  const [dna_hash_1, agent_pubkey_alice] = alice_conductor.cellId('alice');
-  const [dna_hash_2, agent_pubkey_bobby] = bobby_conductor.cellId('bobby');
+//   const [dna_hash_1, agent_pubkey_alice] = alice_cell.cellId;
+//   const [dna_hash_2, agent_pubkey_bobby] = bobby_cell.cellId;
 
-  // alice sets her username
-  const set_username_alice = await setUsername('alice')(alice_conductor);
-  t.deepEqual(set_username_alice.username, 'alice');
-  t.deepEqual(set_username_alice.agent_id, agent_pubkey_alice);
+//   // alice sets her username
+//   const set_username_alice = await setUsername('alice')(alice_cell);
+//   t.deepEqual(set_username_alice.username, 'alice');
+//   t.deepEqual(set_username_alice.agent_id, agent_pubkey_alice);
 
-  // bob sets his username
-  const set_username_bobbo = await setUsername('bobbo')(bobby_conductor);
-  await delay(1000);
-  t.deepEqual(set_username_bobbo.username, 'bobbo');
-  t.deepEqual(set_username_bobbo.agent_id, agent_pubkey_bobby);
+//   // bob sets his username
+//   const set_username_bobbo = await setUsername('bobbo')(bobby_cell);
+//   await delay(1000);
+//   t.deepEqual(set_username_bobbo.username, 'bobbo');
+//   t.deepEqual(set_username_bobbo.agent_id, agent_pubkey_bobby);
 
-  // // error: bob sets a new username for himself
-  // const set_username_bobbo_2 = await setUsername('bobbo')(bobby_conductor, 'bobbo');
-  // await delay(1000);
+//   // // error: bob sets a new username for himself
+//   // const set_username_bobbo_2 = await setUsername('bobbo')(bobby_conductor, 'bobbo');
+//   // await delay(1000);
 
-  // // error: carly sets an already taken username
-  // const set_username_carly = await setUsername('bobbo')(conductor, 'carly');
-  // await delay(1000);
-  });
+//   // // error: carly sets an already taken username
+//   // const set_username_carly = await setUsername('bobbo')(conductor, 'carly');
+//   // await delay(1000);
+// });
 
   orchestrator.registerScenario('get usernames', async (s, t) => {
-  const [alice, bobby, clark] = await s.players([config, config, config]);
-  const [alice_lobby_happ] = await alice.installAgentsHapps(installable);
-  const [bobby_lobby_happ] = await bobby.installAgentsHapps(installable);
-  const [clark_lobby_happ] = await clark.installAgentsHapps(installable);
-  const alice_conductor = alice_lobby_happ[0].cells[0];
-  const bobby_conductor = bobby_lobby_happ[0].cells[0];
-  const clark_conductor = clark_lobby_happ[0].cells[0];
+  const [conductor] = await s.players([config]);
+  const [[alice_lobby_happ], [bobby_lobby_happ], [clark_lobby_happ]] = await conductor.installAgentsHapps(install3Agents);
+  const [alice_conductor] = alice_lobby_happ.cells;
+  const [bobby_conductor] = bobby_lobby_happ.cells;
+  const [clark_conductor] = clark_lobby_happ.cells;
 
-  const [dna_hash_1, agent_pubkey_alice] = alice_conductor.cellId('alice');
-  const [dna_hash_2, agent_pubkey_bobby] = bobby_conductor.cellId('bobby');
-  const [dna_hash_3, agent_pubkey_clark] = clark_conductor.cellId('clark');
+  const [dna_hash_1, agent_pubkey_alice] = alice_conductor.cellId;
+  const [dna_hash_2, agent_pubkey_bobby] = bobby_conductor.cellId;
+  const [dna_hash_3, agent_pubkey_clark] = clark_conductor.cellId;
 
   // // error: alice gets own nonexistent 
   // const profile_alice_none = await getMyUsername()(conductor, 'alice');
@@ -95,10 +94,15 @@ orchestrator.registerScenario('create username', async (s, t) => {
 
   const set_username_alice = await setUsername('alice')(alice_conductor,);
   const set_username_bobbo = await setUsername('bobbo')(bobby_conductor);
-  await delay(1000);
-
+  console.log("what the hell is happening1")
+  console.log(set_username_bobbo)
+  
+  await delay(10000);
+  
   // alice gets own profile
   const profile_alice = await getMyUsername()(alice_conductor,);
+  console.log("what the hell is happening2")
+  console.log(profile_alice)
   t.deepEqual(profile_alice.username, 'alice');
   await delay(1000);
 

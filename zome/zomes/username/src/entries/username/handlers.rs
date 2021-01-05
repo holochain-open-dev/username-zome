@@ -85,7 +85,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
 
 pub(crate) fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOutput> {
 
-    let links = get_links(agent_pubkey.into(), None)?;
+    let links = get_links(agent_pubkey.into(), Some(LinkTag::new("username")))?;
 
     if links.clone().into_inner().into_iter().len() >= 1 {
         let link = links.into_inner()[0].clone();
