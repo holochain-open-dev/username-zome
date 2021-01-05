@@ -46,34 +46,34 @@ function getMyUsername() {
 };
 
 
-// orchestrator.registerScenario('create username', async (s: ScenarioApi, t) => {
-//   const [conductor] = await s.players([config]);
-//   const [[alice_lobby_happ], [bobby_lobby_happ]] = await conductor.installAgentsHapps(install2Agents);
-//   const [alice_cell] = alice_lobby_happ.cells;
-//   const [bobby_cell] = bobby_lobby_happ.cells;
+orchestrator.registerScenario('create username', async (s: ScenarioApi, t) => {
+  const [conductor] = await s.players([config]);
+  const [[alice_lobby_happ], [bobby_lobby_happ]] = await conductor.installAgentsHapps(install2Agents);
+  const [alice_cell] = alice_lobby_happ.cells;
+  const [bobby_cell] = bobby_lobby_happ.cells;
 
-//   const [dna_hash_1, agent_pubkey_alice] = alice_cell.cellId;
-//   const [dna_hash_2, agent_pubkey_bobby] = bobby_cell.cellId;
+  const [dna_hash_1, agent_pubkey_alice] = alice_cell.cellId;
+  const [dna_hash_2, agent_pubkey_bobby] = bobby_cell.cellId;
 
-//   // alice sets her username
-//   const set_username_alice = await setUsername('alice')(alice_cell);
-//   t.deepEqual(set_username_alice.username, 'alice');
-//   t.deepEqual(set_username_alice.agent_id, agent_pubkey_alice);
+  // alice sets her username
+  const set_username_alice = await setUsername('alice')(alice_cell);
+  t.deepEqual(set_username_alice.username, 'alice');
+  t.deepEqual(set_username_alice.agent_id, agent_pubkey_alice);
 
-//   // bob sets his username
-//   const set_username_bobbo = await setUsername('bobbo')(bobby_cell);
-//   await delay(1000);
-//   t.deepEqual(set_username_bobbo.username, 'bobbo');
-//   t.deepEqual(set_username_bobbo.agent_id, agent_pubkey_bobby);
+  // bob sets his username
+  const set_username_bobbo = await setUsername('bobbo')(bobby_cell);
+  await delay(1000);
+  t.deepEqual(set_username_bobbo.username, 'bobbo');
+  t.deepEqual(set_username_bobbo.agent_id, agent_pubkey_bobby);
 
-//   // // error: bob sets a new username for himself
-//   // const set_username_bobbo_2 = await setUsername('bobbo')(bobby_conductor, 'bobbo');
-//   // await delay(1000);
+  // // error: bob sets a new username for himself
+  // const set_username_bobbo_2 = await setUsername('bobbo')(bobby_conductor, 'bobbo');
+  // await delay(1000);
 
-//   // // error: carly sets an already taken username
-//   // const set_username_carly = await setUsername('bobbo')(conductor, 'carly');
-//   // await delay(1000);
-// });
+  // // error: carly sets an already taken username
+  // const set_username_carly = await setUsername('bobbo')(conductor, 'carly');
+  // await delay(1000);
+});
 
   orchestrator.registerScenario('get usernames', async (s, t) => {
   const [conductor] = await s.players([config]);
