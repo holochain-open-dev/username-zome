@@ -19,7 +19,7 @@ fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput>
 
 #[hdk_extern]
 fn get_usernames(agent_pubkeys: AgentPubKeys) -> ExternResult<UsernameList> {
-    username::handlers::get_username(agent_pubkeys)
+    username::handlers::get_usernames(agent_pubkeys)
 }
 
 #[hdk_extern]
