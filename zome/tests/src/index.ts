@@ -21,9 +21,9 @@ function setUsername(username) {
   return (conductor) => conductor.call("username", "set_username", username);
 }
 
-function getUsername(agent_pubkey) {
+function getUsernames(agent_pubkeys) {
   return (conductor) =>
-    conductor.call("username", "get_username", agent_pubkey);
+    conductor.call("username", "get_usernames", agent_pubkeys);
 }
 function getAllUsernames() {
   return (conductor) => conductor.call("username", "get_all_usernames", null);
@@ -105,16 +105,17 @@ orchestrator.registerScenario("get usernames", async (s, t) => {
   t.deepEqual(profile_bobbo.username, "bobbo");
 
   // alice gets bobbo's profile using his agent pubkey
-  const profile_bobbo_alice_2 = await getUsername(agent_pubkey_bobby)(
+  const profile_bobbo_alice_2 = await getUsernames([agent_pubkey_bobby])(
     alice_conductor
   );
-  t.deepEqual(profile_bobbo_alice_2.username, "bobbo");
+  t.deepEqual(profile_bobbo_alice_2[0].username, "bobbo");
 
   // bobbo gets alice's username using her agent pubkey
-  const profile_alice_bobbo_2 = await getUsername(agent_pubkey_alice)(
-    bobby_conductor
-  );
-  t.deepEqual(profile_alice_bobbo_2.username, "alice");
+  const profile_alice_bobbo_2 = await getUsernames([
+    agent_pubkey_alice,
+    agent_pubkey_bobby,
+  ])(bobby_conductor);
+  t.deepEqual(profile_alice_bobbo_2.length, 2);
 
   // alice gets all usernames
   const profile_all_alice = await getAllUsernames()(alice_conductor);

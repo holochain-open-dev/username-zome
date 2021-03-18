@@ -3,18 +3,10 @@ use hdk3::prelude::*;
 mod entries;
 use entries::username;
 
-use username::{
-    UsernameEntry,
-    UsernameOutput,
-    UsernameList,
-    UsernameWrapper,
-};
+use username::{AgentPubKeys, UsernameEntry, UsernameList, UsernameOutput, UsernameWrapper};
 
 // ENTRY DEF DECLARATION
-entry_defs![
-    UsernameEntry::entry_def(),
-    Path::entry_def()
-];
+entry_defs![UsernameEntry::entry_def(), Path::entry_def()];
 
 pub fn error<T>(reason: &str) -> ExternResult<T> {
     Err(HdkError::Wasm(WasmError::Zome(String::from(reason))))
@@ -26,8 +18,8 @@ fn set_username(username_input: UsernameWrapper) -> ExternResult<UsernameOutput>
 }
 
 #[hdk_extern]
-fn get_username(agent_pubkey: AgentPubKey) -> ExternResult<UsernameOutput> {
-    username::handlers::get_username(agent_pubkey)
+fn get_usernames(agent_pubkeys: AgentPubKeys) -> ExternResult<UsernameList> {
+    username::handlers::get_username(agent_pubkeys)
 }
 
 #[hdk_extern]
@@ -44,4 +36,3 @@ fn get_agent_pubkey_from_username(username_input: UsernameWrapper) -> ExternResu
 fn get_my_username(_: ()) -> ExternResult<UsernameOutput> {
     username::handlers::get_my_username(())
 }
-
