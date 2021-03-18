@@ -22,3 +22,6 @@ pub struct UsernameList(Vec<UsernameOutput>);
 
 #[derive(From, Into, Serialize, Deserialize, SerializedBytes)]
 pub struct UsernameWrapper(String);
+
+#[derive(From, Into, Serialize, Deserialize, SerializedBytes)]
+pub struct AgentPubKeys(Vec<AgentPubKey>);
