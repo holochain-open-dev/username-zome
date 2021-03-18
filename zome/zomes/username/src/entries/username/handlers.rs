@@ -81,7 +81,7 @@ pub(crate) fn set_username(username_input: UsernameWrapper) -> ExternResult<User
     }
 }
 
-pub(crate) fn get_username(agent_pubkeys: AgentPubKeys) -> ExternResult<UsernameList> {
+pub(crate) fn get_usernames(agent_pubkeys: AgentPubKeys) -> ExternResult<UsernameList> {
     let mut username_list = Vec::default();
 
     for key in agent_pubkeys.0 {
