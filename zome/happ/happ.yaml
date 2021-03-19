@@ -1,0 +1,15 @@
+---
+manifest_version: "1"
+name: username
+description: ~
+slots:
+  - id: username
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../username.dna.workdir/username.dna"
+      properties: ~
+      uuid: ~
+      version: ~
+      clone_limit: 0

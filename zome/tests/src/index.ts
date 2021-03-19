@@ -1,21 +1,28 @@
-import { Config, Orchestrator, InstallAgentsHapps } from "@holochain/tryorama";
+import { Config, Orchestrator, InstallAgentsHapps, ConfigSeed, NetworkType, TransportConfigType } from "@holochain/tryorama";
 import { ScenarioApi } from "@holochain/tryorama/lib/api";
+import { dirname } from "node:path";
 import path from "path";
 
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const config = Config.gen();
-let usernameDNA = path.join("../username.dna.gz");
+// QUIC
+const network = {
+  network_type: NetworkType.QuicBootstrap,
+  transport_pool: [{type: TransportConfigType.Quic}],
+  bootstrap_service: "https://bootstrap-staging.holo.host/",
+};
+
+let usernameDNA = path.join(__dirname,"../../username.dna.workdir/username.dna");
+
+const config:ConfigSeed = Config.gen({network});
+
 
 const install2Agents: InstallAgentsHapps = [[[usernameDNA]], [[usernameDNA]]];
 
-const install3Agents: InstallAgentsHapps = [
-  [[usernameDNA]],
-  [[usernameDNA]],
-  [[usernameDNA]],
-];
+const install3Agents: InstallAgentsHapps = [ [[usernameDNA]], [[usernameDNA]], [[usernameDNA]]];
 
-const orchestrator = new Orchestrator();
+let orchestrator = new Orchestrator();
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function setUsername(username) {
   return (conductor) => conductor.call("username", "set_username", username);
@@ -39,11 +46,10 @@ function getMyUsername() {
 }
 
 orchestrator.registerScenario("create username", async (s: ScenarioApi, t) => {
+
   const [conductor] = await s.players([config]);
-  const [
-    [alice_lobby_happ],
-    [bobby_lobby_happ],
-  ] = await conductor.installAgentsHapps(install2Agents);
+  const [ [alice_lobby_happ], [bobby_lobby_happ] ] = await conductor.installAgentsHapps(install2Agents);
+
   const [alice_cell] = alice_lobby_happ.cells;
   const [bobby_cell] = bobby_lobby_happ.cells;
 
@@ -69,6 +75,9 @@ orchestrator.registerScenario("create username", async (s: ScenarioApi, t) => {
   // const set_username_carly = await setUsername('bobbo')(conductor, 'carly');
   // await delay(1000);
 });
+orchestrator.run();
+
+orchestrator = new Orchestrator();
 
 orchestrator.registerScenario("get usernames", async (s, t) => {
   const [conductor] = await s.players([config]);

@@ -13,8 +13,11 @@ To change the code, you can work either opening VSCode inside the root folder of
 ## Building
 
 ```bash
-CARGO_TARGET=target cargo build --release --target wasm32-unknown-unknown
-dna-util -c username.dna.workdir/
+   nix-shell 
+   CARGO_TARGET=target cargo build --release --target wasm32-unknown-unknown
+   hc dna pack username.dna.workdir/
+   hc app pack happ/
+
 ```
 
 ## Testing
@@ -22,9 +25,9 @@ dna-util -c username.dna.workdir/
 After having built the DNA:
 
 ```bash
-cd test
-npm install
-npm test
+   cd test
+   npm install
+   npm test
 ```
 
 ## Running
@@ -32,7 +35,9 @@ npm test
 After having built the DNA:
 
 ```bash
-holochain-run-dna username.dna.gz
+   hc sandbox generate happ/ --run=8888
+   or the smaller version:
+   hc s generate happ/ -r=8888 
 ```
 
 Now `holochain` will be listening at port `8888`;
