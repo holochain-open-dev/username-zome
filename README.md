@@ -2,8 +2,6 @@
 
 [![hc-institute-japan](https://circleci.com/gh/holochain-open-dev/username-zome.svg?style=svg)](https://circleci.com/gh/holochain-open-dev/username-zome)
 
-Small zome for allowing synchronous (soon asynchronous) messaging between two agents, in Holochain RSM.
-
 
 This module is designed to be included in other DNAs, assuming as little as possible from those. It is packaged as a holochain zome and no built-in UI is provided for it.
   
